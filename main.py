@@ -6,17 +6,45 @@ app = FastAPI()
 
 movie = pd.read_csv("../Data/movies_clean.csv")
 
+def mes_a_numero(mes):
+    meses = {
+        'enero': 1,
+        'febrero': 2,
+        'marzo': 3,
+        'abril': 4,
+        'mayo': 5,
+        'junio': 6,
+        'julio': 7,
+        'agosto': 8,
+        'septiembre': 9,
+        'octubre': 10,
+        'noviembre': 11,
+        'diciembre': 12
+    }
+    mes_lower = mes.lower()
+    if mes_lower in meses:
+        return meses[mes_lower]
+    else:
+        return None
+    
 # def cantidad_filmaciones_mes( Mes ): 
 #       Se ingresa un mes en idioma Español. Debe devolver la cantidad de películas 
 #       que fueron estrenadas en el mes consultado en la totalidad del dataset.
 #       -Ejemplo de retorno: X cantidad de películas fueron estrenadas en el mes de X
 @app.get("/Mes/{mes}")
 def cantidad_filmaciones_mes(mes):
+    mes_numero = mes_a_numero(mes)
+    mes_print = mes.title()
 
-    return {"data" : str(mes)}
+    indice_sin_fecha = movie[movie['release_date'] == '0'].index
+    movie_date_fix = movie.drop(index= indice_sin_fecha)
 
+    filtro = pd.to_datetime(movie_date_fix['release_date']).dt.month == mes_numero
+    total_peli_mes = movie_date_fix[filtro].shape[0]
 
+    return {"data" : f"{total_peli_mes} cantidad de películas fueron estrenadas en el mes de {mes_print}"}
 
+    
 # def cantidad_filmaciones_dia( Dia ): 
 #       Se ingresa un día en idioma Español. Debe devolver la cantidad de películas 
 #       que fueron estrenadas en día consultado en la totalidad del dataset.
