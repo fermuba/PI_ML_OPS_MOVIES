@@ -4,7 +4,7 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
-movie = pd.read_csv("../Data/movies_clean.csv")
+movie = pd.read_csv("./Data/movies_clean.csv")
 
 def mes_a_numero(mes):
     meses = {
