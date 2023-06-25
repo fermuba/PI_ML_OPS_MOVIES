@@ -1,7 +1,10 @@
+import numpy as np
+import pandas as pd
 from fastapi import FastAPI
 
 app = FastAPI()
 
+movie = pd.read_csv("../Data/movies_clean.csv")
 
 # def cantidad_filmaciones_mes( Mes ): 
 #       Se ingresa un mes en idioma Español. Debe devolver la cantidad de películas 
@@ -9,6 +12,7 @@ app = FastAPI()
 #       -Ejemplo de retorno: X cantidad de películas fueron estrenadas en el mes de X
 @app.get("/Mes/{mes}")
 def cantidad_filmaciones_mes(mes):
+
     return {"data" : str(mes)}
 
 
