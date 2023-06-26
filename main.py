@@ -2,10 +2,6 @@ import numpy as np
 import pandas as pd
 from fastapi import FastAPI
 
-app = FastAPI()
-
-movie = pd.read_csv("./Data/movies_clean.csv")
-
 def mes_a_numero(mes):
     meses = {
         'enero': 1,
@@ -26,32 +22,54 @@ def mes_a_numero(mes):
         return meses[mes_lower]
     else:
         return None
+
+def dia_a_numero(dia):
+    dias = {
+        'lunes': 0,
+        'martes': 1,
+        'miercoles': 2,
+        'jueves': 3,
+        'viernes': 4,
+        'sabado': 5,
+        'domingo': 6
+    }
+    dia_lower = dia.lower()
+    if dia_lower in dias:
+        return int(dias[dia_lower])
+    else:
+        return None
     
-# def cantidad_filmaciones_mes( Mes ): 
-#       Se ingresa un mes en idioma Español. Debe devolver la cantidad de películas 
-#       que fueron estrenadas en el mes consultado en la totalidad del dataset.
-#       -Ejemplo de retorno: X cantidad de películas fueron estrenadas en el mes de X
+
+app = FastAPI()
+
+movie = pd.read_csv("./Data/movies_clean.csv")
+
+indice_sin_fecha = movie[movie['release_date'] == '0'].index
+movie_date_fix = movie.drop(index= indice_sin_fecha)
+#movie_date_fix = pd.to_datetime(movie_date_fix['release_date'])
+
+
+    
 @app.get("/Mes/{mes}")
 def cantidad_filmaciones_mes(mes):
     mes_numero = mes_a_numero(mes)
-    mes_print = mes.title()
-
-    indice_sin_fecha = movie[movie['release_date'] == '0'].index
-    movie_date_fix = movie.drop(index= indice_sin_fecha)
+    mes_print = mes.title()   
 
     filtro = pd.to_datetime(movie_date_fix['release_date']).dt.month == mes_numero
     total_peli_mes = movie_date_fix[filtro].shape[0]
 
-    return {"data" : f"{total_peli_mes} cantidad de películas fueron estrenadas en el mes de {mes_print}"}
+    return {"data" : f"{total_peli_mes} películas fueron estrenadas en el mes de {mes_print}"}
 
     
-# def cantidad_filmaciones_dia( Dia ): 
-#       Se ingresa un día en idioma Español. Debe devolver la cantidad de películas 
-#       que fueron estrenadas en día consultado en la totalidad del dataset.
-#       Ejemplo de retorno: X cantidad de películas fueron estrenadas en los días X
 @app.get("/Dia/{dia}")
 def cantidad_filmaciones_dia(dia):
-    return {"data" : str(dia)}
+    dia_numero = dia_a_numero(dia)
+    dia_print = dia.title()
+
+    filtro = pd.to_datetime(movie_date_fix['release_date']).dt.weekday == dia_numero
+    total_peli_dia = movie_date_fix[filtro].shape[0]
+
+    return {"data" : f"{total_peli_dia} películas fueron estrenadas en los días {dia_print}"}
     
 
 
