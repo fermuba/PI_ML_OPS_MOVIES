@@ -1,4 +1,9 @@
+exceptiongroup
 fastapi
-uvicorn
-pandas
+joblib
 numpy
+pandas
+pydantic
+scikit-learn
+scipy
+uvicorn

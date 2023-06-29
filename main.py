@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 from fastapi import FastAPI
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import linear_kernel
 
 def mes_a_numero(mes):
     meses = {
@@ -40,13 +42,67 @@ def dia_a_numero(dia):
         return None
     
 
+def get_recommendations(movie_title, similarity_matrix, movies_df, top_n=5):
+    # Obtener el índice de la película de referencia
+    indices = movies_df[movies_df['title'] == movie_title].index
+
+    if len(indices) == 0:
+        return{"message": 'No se encuentra la Pelicula'}  # No se encontraron películas coincidentes
+
+    idx = indices[0]  # Obtener el primer índice coincidente
+
+    #return idx
+
+    # Obtener los puntajes de similitud de la película de referencia con todas las demás películas
+    similarity_scores = list(enumerate(similarity_matrix[idx]))
+    #return similarity_scores
+
+    # Ordenar las películas por su puntaje de similitud en orden descendente
+    similarity_scores = sorted(similarity_scores, key=lambda x: x[1], reverse=True)
+    #return combined_df.genres.head()
+
+
+    # Obtener los índices de las películas más similares
+    top_indices = [score[0] for score in similarity_scores[1:top_n+1]]
+
+    # Obtener los títulos de las películas más similares
+    top_movies = movies_df.iloc[top_indices]['title'].tolist()
+
+    return top_movies
+
+
+
+#########################################################################################
 app = FastAPI()
 
 movie = pd.read_csv("./Data/movies_clean.csv")
+movie_ml = pd.read_csv("./Data/movies_ml.csv")
+
+if movie_ml.columns[0] == 'Unnamed: 0':
+  movie_ml.drop(columns= 'Unnamed: 0', inplace= True)
+
+if movie.columns[0] == 'Unnamed: 0':
+  movie.drop(columns= 'Unnamed: 0', inplace= True)
+
+movie_ml['genres'].fillna('', inplace=True)
 
 indice_sin_fecha = movie[movie['release_date'] == '0'].index
 movie_date_fix = movie.drop(index= indice_sin_fecha)
 #movie_date_fix = pd.to_datetime(movie_date_fix['release_date'])
+
+### #######################  CODIGO PARA MODELO ML
+
+
+# Crear la matriz de características utilizando TF-IDF
+vectorizer = TfidfVectorizer()
+features_matrix = vectorizer.fit_transform(movie_ml['genres'])
+    
+# Calcular la similitud del coseno entre las películas
+similarity_matrix = linear_kernel(features_matrix, features_matrix)
+
+
+
+
 
 
     
@@ -123,4 +179,9 @@ def get_director(director):
 #       Se ingresa el nombre de una película y te recomienda las similares en una lista de 5 valores.
 @app.get("/Recomendacion/{recomendacion}")
 def recomendacion(recomendacion):
-    return {"data" : str(recomendacion)}
+    # Ejemplo de uso: Obtener las 5 películas más similares a 'Toy Story'
+
+    recommendations = get_recommendations(recomendacion, similarity_matrix, movie_ml)
+    
+    #print(recommendations)
+    return {"data" : str(recommendations)}
