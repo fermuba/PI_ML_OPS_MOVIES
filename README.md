@@ -57,17 +57,5 @@ El Sistema de recomendacio que se termino eligiendo fue TF-IDF, y similitud del 
 
 ### Video
 
-...
-
-## Criterios de evaluación
-
-...
-
-## Fuente de datos
-
-...
-
-## Material de apoyo
-
-...
+https://youtu.be/KBWBvUn4rtE
 
