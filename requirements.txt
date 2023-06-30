@@ -1,11 +1,7 @@
-anyio
-click
-exceptiongroup
 fastapi
 h11
 idna
 joblib
-meson
 numpy
 pandas
 pydantic
@@ -13,9 +9,4 @@ python-dateutil
 pytz
 scikit-learn
 scipy
-sniffio
-starlette
-threadpoolctl
-typing_extensions
-tzdata
 uvicorn
