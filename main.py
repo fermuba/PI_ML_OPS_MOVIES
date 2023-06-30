@@ -98,8 +98,13 @@ if crew.columns[0] == 'Unnamed: 0':
 
 movie_ml['genres'].fillna('', inplace=True)
 
+# Elimino una fila que tiene casi todos los campos vacios y fecha en el id_movie
+movie.drop(index= 19722, inplace= True)
+
 indice_sin_fecha = movie[movie['release_date'] == '0'].index
 movie_date_fix = movie.drop(index= indice_sin_fecha)
+
+
 
 # Codigo para el modelo Ml de recomendacion
 
@@ -205,7 +210,7 @@ def get_actor(actor):
     filtered_movie['revenue'] = filtered_movie['revenue'].astype(float)
     revenue_total = filtered_movie['revenue'].sum()
 
-    return {"data" : str(filtered_movie)}
+    return {"data" : str(revenue_total)}
 
 
 
