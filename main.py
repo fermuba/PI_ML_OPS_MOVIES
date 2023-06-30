@@ -1,9 +1,16 @@
+'''########################################################################################
+    Carga de Librerias
+'''########################################################################################
+
 import numpy as np
 import pandas as pd
 from fastapi import FastAPI
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
 
+'''########################################################################################
+    Funciones del Programa
+'''########################################################################################
 def mes_a_numero(mes):
     meses = {
         'enero': 1,
@@ -47,21 +54,16 @@ def get_recommendations(movie_title, similarity_matrix, movies_df, top_n=5):
     indices = movies_df[movies_df['title'] == movie_title].index
 
     if len(indices) == 0:
-        return{"message": 'No se encuentra la Pelicula'}  # No se encontraron películas coincidentes
+        return{"message": 'No se encuentra la Pelicula'} 
 
     idx = indices[0]  # Obtener el primer índice coincidente
 
-    #return idx
-
     # Obtener los puntajes de similitud de la película de referencia con todas las demás películas
     similarity_scores = list(enumerate(similarity_matrix[idx]))
-    #return similarity_scores
 
     # Ordenar las películas por su puntaje de similitud en orden descendente
     similarity_scores = sorted(similarity_scores, key=lambda x: x[1], reverse=True)
-    #return combined_df.genres.head()
-
-
+    
     # Obtener los índices de las películas más similares
     top_indices = [score[0] for score in similarity_scores[1:top_n+1]]
 
@@ -70,13 +72,17 @@ def get_recommendations(movie_title, similarity_matrix, movies_df, top_n=5):
 
     return top_movies
 
+'''########################################################################################
+    Codigo principal
+'''########################################################################################
 
-
-#########################################################################################
 app = FastAPI()
 
 movie = pd.read_csv("./Data/movies_clean.csv")
 movie_ml = pd.read_csv("./Data/movies_ml.csv")
+cast = pd.read_csv("./Data/credits_cast_clean.csv")
+crew = pd.read_csv("./Data/credits_crew_clean.csv")
+
 
 if movie_ml.columns[0] == 'Unnamed: 0':
   movie_ml.drop(columns= 'Unnamed: 0', inplace= True)
@@ -84,14 +90,18 @@ if movie_ml.columns[0] == 'Unnamed: 0':
 if movie.columns[0] == 'Unnamed: 0':
   movie.drop(columns= 'Unnamed: 0', inplace= True)
 
+if cast.columns[0] == 'Unnamed: 0':
+  cast.drop(columns= 'Unnamed: 0', inplace= True)
+
+if crew.columns[0] == 'Unnamed: 0':
+  crew.drop(columns= 'Unnamed: 0', inplace= True)
+
 movie_ml['genres'].fillna('', inplace=True)
 
 indice_sin_fecha = movie[movie['release_date'] == '0'].index
 movie_date_fix = movie.drop(index= indice_sin_fecha)
-#movie_date_fix = pd.to_datetime(movie_date_fix['release_date'])
 
-### #######################  CODIGO PARA MODELO ML
-
+# Codigo para el modelo Ml de recomendacion
 
 # Crear la matriz de características utilizando TF-IDF
 vectorizer = TfidfVectorizer()
@@ -100,12 +110,10 @@ features_matrix = vectorizer.fit_transform(movie_ml['genres'])
 # Calcular la similitud del coseno entre las películas
 similarity_matrix = linear_kernel(features_matrix, features_matrix)
 
-
-
-
-
-
-    
+'''########################################################################################
+    End Points para la API
+'''########################################################################################
+# Peliculas estrenadas en el mes    
 @app.get("/Mes/{mes}")
 def cantidad_filmaciones_mes(mes):
     mes_numero = mes_a_numero(mes)
@@ -116,7 +124,7 @@ def cantidad_filmaciones_mes(mes):
 
     return {"data" : f"{total_peli_mes} películas fueron estrenadas en el mes de {mes_print}"}
 
-    
+# Peliculas estrenadas en el dia  
 @app.get("/Dia/{dia}")
 def cantidad_filmaciones_dia(dia):
     dia_numero = dia_a_numero(dia)
@@ -128,27 +136,52 @@ def cantidad_filmaciones_dia(dia):
     return {"data" : f"{total_peli_dia} películas fueron estrenadas en los días {dia_print}"}
     
 
-
-# def score_titulo( titulo_de_la_filmación ): 
-#       Se ingresa el título de una filmación esperando como respuesta el título, 
-#       el año de estreno y el score.
-#       Ejemplo de retorno: La película X fue estrenada en el año X con un score/popularidad de X
 @app.get("/Titulo/{titulo}")
 def score_titulo(titulo):
-    return {"data" : str(titulo)}
+    title_lower = titulo.lower()
+
+    index_rows = movie_date_fix[movie_date_fix['title'].str.lower() == title_lower].index.tolist()
+
+
+    if not index_rows:
+        return {"message": f"La película {titulo} no está en la lista o fue ingresada incorrectamente"}
+
+    movies = []
+    message = ''
+    for index_row in index_rows:
+        title = movie_date_fix.loc[index_row, 'title']
+        year = int(movie_date_fix.loc[index_row, 'release_year'])
+        score = float(movie_date_fix.loc[index_row, 'popularity'])
+        message += f"La película {title} fue estrenada en el año {year} con un score/popularidad de {score}      "
+        movies.append({"title": title, "year":year, "score": score})
+
+    return {"data" : message}
 
 
 
-# def votos_titulo( votos_de_la_filmación ): 
-#       Se ingresa el título de una filmación esperando como respuesta el título, 
-#       la cantidad de votos y el valor promedio de las votaciones. La misma variable 
-#       deberá de contar con al menos 2000 valoraciones, caso contrario, debemos contar 
-#       con un mensaje avisando que no cumple esta condición y que por ende, no se devuelve 
-#       ningun valor.
-#       Ejemplo de retorno: La película X fue estrenada en el año X. La misma cuenta con un total de X valoraciones, con un promedio de X
-@app.get("/Votos/{votos}")
-def votos_titulo(votos):
-    return {"data" : int(votos)}
+@app.get("/Votos/{titulo}")
+def votos_titulo(titulo):
+    title_lower = titulo.lower()
+
+    index_rows = movie_date_fix[movie_date_fix['title'].str.lower() == title_lower].index.tolist()
+
+    if not index_rows:
+        return {"message": f"La película {titulo} no está en la lista o fue ingresada incorrectamente"}
+
+    movies = []
+    message = ''
+    for index_row in index_rows:
+        title = movie_date_fix.loc[index_row, 'title']
+        year = int(movie_date_fix.loc[index_row, 'release_year'])
+        if float(movie_date_fix.loc[index_row, 'vote_count']) > 2000:
+            vote = float(movie_date_fix.loc[index_row, 'vote_count'])
+            vote_average = float(movie_date_fix.loc[index_row, 'vote_average'])
+            movies.append({"title": title, "vote":vote, "vote_average": vote_average})
+            message += f"La película {title} fue estrenada en el año {year}. La misma cuenta con un total de {vote} valoraciones, con un promedio de {vote_average}   "
+        else:
+            message += f"La película {title} fue estrenada en el año {year} no cuenta con al menos 2000 valoraciones"
+            
+    return {"data" : message}
 
 
 
@@ -160,7 +193,19 @@ def votos_titulo(votos):
 #       Ejemplo de retorno: El actor X ha participado de X cantidad de filmaciones, el mismo ha conseguido un retorno de X con un promedio de X por filmación
 @app.get("/Actor/{actor}")
 def get_actor(actor):
-    return {"data" : str(actor)}
+
+
+    actor_lower = actor.lower()
+
+    index_rows = cast[cast['name'].str.lower() == actor_lower].index.tolist()
+    id_movie_columns = cast.loc[index_rows, 'id_movie'].astype(object).tolist()
+    
+    movie['id_movie'] = movie['id_movie'].astype(object)
+    filtered_movie = movie[movie['id_movie'].isin(id_movie_columns)]
+    filtered_movie['revenue'] = filtered_movie['revenue'].astype(float)
+    revenue_total = filtered_movie['revenue'].sum()
+
+    return {"data" : str(filtered_movie)}
 
 
 
@@ -175,13 +220,8 @@ def get_director(director):
 
 
 
-# def recomendacion( titulo ): 
-#       Se ingresa el nombre de una película y te recomienda las similares en una lista de 5 valores.
 @app.get("/Recomendacion/{recomendacion}")
 def recomendacion(recomendacion):
-    # Ejemplo de uso: Obtener las 5 películas más similares a 'Toy Story'
-
     recommendations = get_recommendations(recomendacion, similarity_matrix, movie_ml)
     
-    #print(recommendations)
     return {"data" : str(recommendations)}
