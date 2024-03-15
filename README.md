@@ -1,7 +1,3 @@
-<p align=center><img src=https://d31uz8lwfmyn8g.cloudfront.net/Assets/logo-henry-white-lg.png><p>
-
-# PROYECTO INDIVIDUAL Nº1
-
 # Machine Learning Operations (MLOps)
 
 <p align="center">
